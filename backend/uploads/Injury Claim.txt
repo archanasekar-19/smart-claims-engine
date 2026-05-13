@@ -1,0 +1,13 @@
+Policy Number: POL-889900
+Policyholder Name: Sarah Johnson
+
+Date: 12 May 2026
+Time: 8:00 AM
+Location: Hyderabad
+
+Description: Passenger suffered leg injury during collision.
+
+Claimant: Sarah Johnson
+Estimated Damage: 60000
+
+Claim Type: Injury

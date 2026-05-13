@@ -1,0 +1,21 @@
+Policy Number: POL-334455
+Policyholder Name: Rajesh Kumar
+Effective Dates: Jan 2025 - Jan 2026
+
+Date: 11 May 2026
+Time: 3:00 PM
+Location: Mumbai
+
+Description: Multiple passengers injured in high-speed collision on expressway. Requires specialist injury assessment.
+
+Claimant: Rajesh Kumar
+Third Parties: 2 vehicles involved
+Contact Details: 9123456780
+
+Asset Type: SUV
+Asset ID: MH04CD5678
+Estimated Damage: 120000
+
+Claim Type: Injury
+Attachments: Medical Reports, Police FIR
+Initial Estimate: 115000

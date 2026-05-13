@@ -1,0 +1,19 @@
+Policy Number: POL-556677
+Policyholder Name: Priya Nair
+
+Date: 9 May 2026
+Time: 6:45 PM
+Location: Kochi
+
+Description: Ambiguous claim with conflicting statements from claimant and workshop. Damage extent unclear from photos.
+
+Claimant: Priya Nair
+Third Parties: Unknown
+Contact Details: 9988776655
+
+Asset Type: Car
+Asset ID: KL07EF9012
+Estimated Damage: 95000
+
+Claim Type: Vehicle Damage
+Attachments: Blurry Photos

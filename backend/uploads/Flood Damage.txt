@@ -1,0 +1,21 @@
+Policy Number: POL-445566
+Policyholder Name: Anita Sharma
+Effective Dates: Mar 2025 - Mar 2026
+
+Date: 18 April 2026
+Time: 6:45 PM
+Location: Chennai
+
+Description: Vehicle submerged during heavy flooding near residential area.
+
+Claimant: Anita Sharma
+Third Parties: None
+Contact Details: 9123456780
+
+Asset Type: Sedan
+Asset ID: TN09AA4567
+Estimated Damage: 350000
+
+Claim Type: Natural Disaster
+Attachments: Photos, Service Report
+Initial Estimate: 320000

@@ -1,0 +1,21 @@
+Policy Number: POL-123456
+Policyholder Name: John Doe
+Effective Dates: Jan 2025 - Jan 2026
+
+Date: 10 May 2026
+Time: 10:30 AM
+Location: Chennai
+
+Description: Minor rear-end collision at traffic signal.
+
+Claimant: John Doe
+Third Parties: None
+Contact Details: 9876543210
+
+Asset Type: Car
+Asset ID: TN01AB1234
+Estimated Damage: 18000
+
+Claim Type: Vehicle Damage
+Attachments: Photos
+Initial Estimate: 15000

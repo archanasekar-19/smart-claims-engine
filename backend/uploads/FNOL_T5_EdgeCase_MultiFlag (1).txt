@@ -1,0 +1,107 @@
+FIRST NOTICE OF LOSS — TEST DOCUMENT
+=====================================
+CASE ROUTING TARGET : INVESTIGATION FLAG (priority over Specialist Queue)
+FNOL Reference      : CLM-TEST-EDGE-005
+Date Filed          : 28 May 2025
+Intake Channel      : Walk-in + email hybrid (partial form submitted online)
+
+NOTE TO TESTER: This is a multi-flag edge case to test routing PRIORITY:
+  [FLAG A] Claim Type includes "Injury" → would normally trigger Specialist Queue
+  [FLAG B] Description contains "staged" and "inconsistent" → Investigation Flag
+  [FLAG C] Policy expiry date is missing → would trigger Manual Review
+  [FLAG D] Estimated damage is INR 3,20,000 → above fast-track threshold
+PRIORITY TEST: Investigation Flag should override Specialist Queue and Manual Review.
+Expected routing → Investigation Flag (with notes on secondary flags).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION A — POLICY INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Policy Number        : PAP-2024-TN-44100
+Policyholder Name    : Dinesh Arumugam
+Policy Effective Date: 01 August 2024
+Policy Expiry Date   : [MISSING — online form field left blank; claimant
+                       states "I'll send a copy of the policy later"]
+Agent / Branch       : T.Nagar Branch, Chennai — Agent ID: AG-2201
+Coverage Type        : Comprehensive Motor — Own Damage + Third-Party Liability
+                       + Personal Accident Cover (INR 15,00,000)
+NCB Status           : 20% — first renewal
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION B — INCIDENT INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Date of Incident     : 25 May 2025
+Time of Incident     : 11:40 PM
+Location             : Rajiv Gandhi Salai (OMR), near Perungudi Toll, Chennai
+GPS Co-ordinates     : 12.9516° N, 80.2425° E
+Weather Conditions   : Dry; no rain; good street lighting at toll area
+
+Incident Description :
+The insured (Dinesh Arumugam) states that his vehicle, a Hyundai Creta SX+
+(TN-09-EE-7712), was rear-ended at speed by a third-party vehicle (TN-07-Z-1199)
+near the Perungudi Toll. Dinesh claims he sustained whiplash and a lower back
+injury. He was taken to Gleneagles Hospital by the third party's associates.
+However, two independent witnesses who were manning a food stall at the toll
+stated to police that the collision "appeared to be staged — both vehicles were
+parked briefly before the event and the drivers appeared to communicate with
+each other." CCTV footage from the toll plaza shows the two vehicles approaching
+together in convoy before the alleged rear-end. The A&E notes from Gleneagles
+Hospital describe Dinesh's injuries as "inconsistent with the described
+mechanism of injury — no acute neurological findings despite reported severe
+whiplash." The third-party driver (Ramesh K.) has no insurance and cannot be
+contacted since the date of the incident.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION C — INVOLVED PARTIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Claimant Name        : Dinesh Arumugam
+Claimant DOB         : 03 Mar 1991
+Claimant Contact     : +91 94440 28811 | dinesh.a91@outlook.com
+Third Party Driver   : Ramesh K. (full surname unknown) — UNREACHABLE since incident
+TP Vehicle           : TN-07-Z-1199 — registration check shows vehicle reported
+                       stolen in Madurai 6 months prior (police notation attached)
+TP Insurance         : None confirmed
+Witnesses            : Food stall owner (name: Murugan, food stall at toll gate 3)
+                       and an auto-rickshaw driver (anonymous, plate not recorded)
+Injuries Claimed     :
+  - Dinesh: Whiplash + lower back pain (hospitalised 25–26 May 2025, discharged)
+  - Hospital Report: "Inconsistent with described mechanism" (see above)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION D — ASSET DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Asset Type           : Private Motor Vehicle
+Asset ID             : Hyundai Creta SX+ 2023 | TN-09-EE-7712
+                       Chassis: MALA851CANU123456 | Engine: G4FGU567890
+Damage Description   : Rear bumper replaced; rear camera housing cracked;
+                       boot lid misaligned. Workshop (Hyundai DISHA, Sholinganallur)
+                       quote submitted.
+Estimated Repair Cost: INR 3,20,000 (workshop quote — includes painting & alignment)
+Medical Claim Added  : INR 48,500 (hospital bills — Gleneagles A&E + pharmacy)
+PA Claim Initiated   : INR 50,000 interim requested for loss of earnings
+Total Claim Submitted: INR 4,18,500
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION E — MANDATORY FIELDS CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Claim Type           : Motor Vehicle – Accident + Personal Injury + PA Claim
+                       *** INJURY COMPONENT PRESENT ***
+Attachments Submitted:
+  [1] DL Copy — DL_Dinesh_TN09.pdf
+  [2] RC Book — RC_TN09EE7712.pdf
+  [3] Workshop Estimate — Estimate_HyundaiDISHA_May2025.pdf
+  [4] Hospital Discharge Summary — Gleneagles_DS_26May2025.pdf
+  [5] FIR Copy — FIR-Perungudi-PS-2025-0614.pdf
+  [6] Toll CCTV Footage (CD) — physical medium submitted at branch
+  [7] TP Stolen Vehicle Report — PoliceReport_TN07Z1199_Stolen.pdf
+Initial Estimate     : INR 4,18,500
+Policy Copy          : NOT SUBMITTED (expiry date also missing — see Section A)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION F — DECLARATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Claimant Signature   : Dinesh Arumugam (wet signature; branch copy at T.Nagar)
+Date                 : 28 May 2025
+Claims Handler       : Intake officer Priya R. — flagged for SIU review.
+                       Multiple routing triggers detected; supervisor override
+                       to Investigation Flag applied pending SIU confirmation.
+Handler Note         : "Do NOT process any payment until SIU clearance obtained."

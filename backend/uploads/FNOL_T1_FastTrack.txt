@@ -1,0 +1,87 @@
+FIRST NOTICE OF LOSS — TEST DOCUMENT
+=====================================
+CASE ROUTING TARGET : FAST-TRACK
+FNOL Reference      : CLM-TEST-FT-001
+Date Filed          : 07 Feb 2025
+Intake Channel      : Online Portal (Self-Service)
+
+NOTE TO TESTER: All mandatory fields are present. Estimated damage is INR 18,500
+(below the 25,000 fast-track threshold). No fraud keywords. No injury.
+Expected routing → Fast-Track.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION A — POLICY INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Policy Number        : PAP-2023-TN-88210
+Policyholder Name    : Kavitha Subramanian
+Policy Effective Date: 01 April 2024
+Policy Expiry Date   : 31 March 2025
+Agent / Branch       : Thiruvanmiyur Branch, Chennai – Agent ID: AG-0341
+Coverage Type        : Own Damage (OD) + Third-Party Liability (TPL)
+No-Claim Bonus (NCB) : 25% applicable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION B — INCIDENT INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Date of Incident     : 05 Feb 2025
+Time of Incident     : 07:20 AM
+Location             : ECR Road, Injambakkam, Chennai – TN 600115
+GPS Co-ordinates     : 12.9121° N, 80.2573° E
+Weather Conditions   : Light drizzle, low visibility
+Road Surface         : Wet / Slippery
+
+Incident Description :
+The insured vehicle (Maruti Suzuki Swift VXI, TN-09-CC-5523) skidded on a wet
+road patch and made minor contact with a roadside concrete curb. No other
+vehicles or persons were involved. The insured pulled over safely, photographed
+the damage immediately, and called the 24x7 helpline at 07:35 AM.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION C — INVOLVED PARTIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Claimant Name        : Kavitha Subramanian
+Claimant DOB         : 14 Aug 1988
+Claimant Contact     : +91 98410 77234  |  kavitha.s88@gmail.com
+Relationship to PH   : Self (Policyholder is the driver)
+Driving Licence No.  : TN-09-2010-0034521  (Valid up to 13 Aug 2028)
+Third Parties Involved: None
+Injuries Reported    : None — insured confirms no physical injury to self or others
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION D — ASSET DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Asset Type           : Private Motor Vehicle
+Asset Make / Model   : Maruti Suzuki Swift VXI (Petrol, 2022)
+Registration No.     : TN-09-CC-5523
+Chassis No.          : MA3FJEB1S00123456
+Engine No.           : K12MNA456789
+Odometer Reading     : 22,400 km
+Damage Description   : Left front alloy wheel scuffed; left-side skirt cracked;
+                       no structural or engine damage observed.
+Drivable?            : Yes — vehicle driven home after incident
+Estimated Repair Cost: INR 18,500 (preliminary workshop quote from Maruti True Value)
+Photographs Taken?   : Yes — 6 photos uploaded via mobile app (ref: IMG-FT001-A to F)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION E — MANDATORY FIELDS CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Claim Type           : Motor Vehicle – Own Damage (Non-Accident, Single Vehicle)
+Attachments Submitted:
+  [1] Driving Licence (front + back) — DL_Kavitha_Scan.pdf
+  [2] RC Book — RC_TN09CC5523.pdf
+  [3] Policy Certificate — Policy_PAP2023TN88210.pdf
+  [4] Workshop Estimate — Estimate_MarutiTrueValue_Feb2025.pdf
+  [5] Photographs — IMG-FT001-A.jpg to IMG-FT001-F.jpg
+Initial Estimate     : INR 18,500
+Surveyor Required?   : No — below threshold, desktop assessment applicable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION F — DECLARATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+I, Kavitha Subramanian, declare that all information provided is true and
+accurate to the best of my knowledge. I understand that false declarations
+may result in claim rejection and policy cancellation.
+
+Claimant Signature   : Kavitha Subramanian (e-signed via OTP — Ref: ESIGN-20250207-4421)
+Date                 : 07 February 2025
+Claims Handler       : Auto-assigned (Fast-Track Queue)
