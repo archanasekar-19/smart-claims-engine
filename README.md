@@ -4,8 +4,9 @@ An intelligent FNOL (First Notice of Loss) document processing system that extra
 
 ## Live Demo
 
-- Frontend: https://smart-claims-engine.netlify.app
-- Backend API: https://smart-claims-engine-2.onrender.com
+- Frontend: <a href="https://smart-claims-engine.netlify.app" target="_blank">smart-claims-engine.netlify.app</a>
+
+- Backend API: <a href="https://smart-claims-engine-2.onrender.com" target="_blank">smart-claims-engine-2.onrender.com</a>
 
 ---
 
