@@ -1,6 +1,3 @@
-Here is your **ready-to-use `README.md` file**:
-
-````markdown
 # 🚀 Smart Claims Engine
 
 **Autonomous FNOL Processing Agent**  
