@@ -8,8 +8,8 @@ Fixes missing field extraction by:
 
 import re
 from typing import Dict, Any, Optional
-from parser import extract
-from config import (
+from lib.parser import extract
+from lib.config import (
     ACORD_FIELD_MAP,
     TEXT_PATTERNS,
     MONEY_PATTERNS,
@@ -19,6 +19,7 @@ from config import (
     is_empty,
     find_in_remarks,
 )
+
 
 def extract_claim(file_path: str) -> Dict[str, Any]:
     """
