@@ -221,19 +221,24 @@ Four sample PDFs are included, each designed to trigger a specific routing outco
 }
 ```
 
-# Deployment
-Backend — Render
+## Deployment
 
-Service: Web Service
-Root Directory: backend
-Build Command: pip install -r requirements.txt
-Start Command: uvicorn app:app --host 0.0.0.0 --port $PORT
-Live URL: https://smart-claims-engine-2.onrender.com
+### Backend — Render
 
-Frontend — Netlify
+| Field | Value |
+|-------|-------|
+| Service | Web Service |
+| Root Directory | `backend` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app:app --host 0.0.0.0 --port $PORT` |
+| Live URL | https://smart-claims-engine-2.onrender.com |
 
-Base Directory: frontend-ui
-Build Command: npm run build
-Publish Directory: dist
-Environment Variable: VITE_API_URL=https://smart-claims-engine-2.onrender.com
-Live URL: https://smart-claims-engine.netlify.app
+### Frontend — Netlify
+
+| Field | Value |
+|-------|-------|
+| Base Directory | `frontend-ui` |
+| Build Command | `npm run build` |
+| Publish Directory | `dist` |
+| Environment Variable | `VITE_API_URL=https://smart-claims-engine-2.onrender.com` |
+| Live URL | https://smart-claims-engine.netlify.app |
