@@ -220,3 +220,20 @@ Four sample PDFs are included, each designed to trigger a specific routing outco
   "reasoning": "Estimated damage is below ₹25,000"
 }
 ```
+
+# Deployment
+Backend — Render
+
+Service: Web Service
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn app:app --host 0.0.0.0 --port $PORT
+Live URL: https://smart-claims-engine-2.onrender.com
+
+Frontend — Netlify
+
+Base Directory: frontend-ui
+Build Command: npm run build
+Publish Directory: dist
+Environment Variable: VITE_API_URL=https://smart-claims-engine-2.onrender.com
+Live URL: https://smart-claims-engine.netlify.app
