@@ -2,6 +2,11 @@
 
 An intelligent FNOL (First Notice of Loss) document processing system that extracts key fields, detects missing or inconsistent data, and automatically routes claims to the correct workflow.
 
+## Live Demo
+
+- Frontend: https://smart-claims-engine.netlify.app
+- Backend API: https://smart-claims-engine-2.onrender.com
+
 ---
 
 ## Approach
