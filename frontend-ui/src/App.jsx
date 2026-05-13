@@ -528,17 +528,45 @@ export default function App() {
               </div>
 
               {/* INCONSISTENCIES */}
+              {/* INCONSISTENCIES */}
               {result.inconsistencies && result.inconsistencies.length > 0 && (
                 <div style={{ ...card, padding: '24px', border: '1px solid #fca5a5', background: '#fef2f2' }}>
                   <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#b91c1c', opacity: 0.8, display: 'block', marginBottom: 12 }}>
                     ⚠ Inconsistencies Detected
                   </span>
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {result.inconsistencies.map((inc, i) => (
-                      <div key={i} style={{ background: '#fff', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
-                        {inc}
-                      </div>
-                    ))}
+                    {result.inconsistencies.map((inc, i) => {
+                      // normalize (handles both string + object safely)
+                      const field = typeof inc === 'object' ? inc.field : '';
+                      const issue = typeof inc === 'object' ? inc.issue : String(inc);
+                      const severity = typeof inc === 'object' ? inc.severity : '';
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            background: '#fff',
+                            border: '1px solid #fecaca',
+                            color: '#b91c1c',
+                            padding: '10px 14px',
+                            borderRadius: 10,
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          <div style={{ fontWeight: 800 }}>
+                            {field ? `${field}: ` : ''}{issue}
+                          </div>
+
+                          {severity && (
+                            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>
+                              Severity: {severity}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -84,6 +84,9 @@ def parse_money(s: str):
 # Their values are written into REMARKS as "Key: Value" lines.
 
 ACORD_FIELD_MAP = {
+    # Unlabelled Text* fields are resolved by spatial proximity in parser.py.
+    # They arrive here already mapped to internal keys — no hardcoding needed.
+
     # ── Policy / insured ──────────────────────────────────────────────────
     "POLICY NUMBER": "policy_number",
     "CARRIER": "carrier",
@@ -150,19 +153,26 @@ TEXT_PATTERNS = {
         r"Insured\s*(?:Name)?[:\s]+(.+?)(?:\n|$)",
     ],
     "effective_dates": [
-        r"Policy\s+(?:Effective|Period|Duration)[:\s]+(.+?)(?:\n|$)",
-        r"Effective\s+From[:\s]+(.+?)(?:\s+To|$)",
-        r"Effective\s*Date[:\s]+(.+?)(?:\n|$)",
+        # Match strict date-range patterns only — stop at period or "Policy No"
+        # to avoid swallowing the entire REMARKS blob.
+        r"Policy\s+Period[:\s]+(\d{1,2}/\d{1,2}/\d{4}\s+to\s+\d{1,2}/\d{1,2}/\d{4})",
+        r"Policy\s+(?:Effective|Duration)[:\s]+(\d{1,2}/\d{1,2}/\d{4}[^.\n]*?(?:to|–|-)\s*\d{1,2}/\d{1,2}/\d{4})",
+        r"Effective\s*Date[:\s]+(\d{1,2}/\d{1,2}/\d{4})",
         r"(\d{1,2}/\d{1,2}/\d{4})\s+(?:to|-|–)\s+(\d{1,2}/\d{1,2}/\d{4})",
     ],
     "incident_date": [
-        r"(?:Date\s+)?(?:of\s+)?(?:Incident|Loss|Accident|Claim)[:\s]+(.+?)(?:\n|$)",
-        r"Incident\s*Date[:\s]+(.+?)(?:\n|$)",
-        r"(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"(\w+\s+\d{1,2},?\s+\d{4})",  # January 15, 2024
+        # Explicit labeled patterns first — require a date format to avoid matching addresses
+        r"(?:Date\s+of\s+)?(?:Loss|Incident|Accident)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        r"Incident\s*Date[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        r"Date\s+of\s+Loss[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        r"(?:Date\s+of\s+)?(?:Loss|Incident|Accident)[:\s]+(\w+\s+\d{1,2},?\s+\d{4})",
+        # Positional fallback — bare date on its own line only
+        r"^(\d{1,2}/\d{1,2}/\d{4})$",
     ],
     "incident_time": [
+        # Require valid hour (0-23) and minute (0-59)
         r"Time\s+of\s+(?:Incident|Loss|Accident)[:\s]+(\d{1,2}[:.]\d{2}\s*(?:AM|PM)?)",
+        r"\bText4:\s*(\d{1,2}:\d{2})\b",
         r"(?:at\s+)?(\d{1,2}[:.]\d{2}\s*(?:AM|PM|am|pm)?)",
         r"(?:time|occurred)[:\s]*(\d{1,2}[:.]\d{2})",
     ],
@@ -177,10 +187,11 @@ TEXT_PATTERNS = {
         r"Claimant[:\s]+(.+?)(?:\n|$)",
     ],
     "contact_details": [
-        r"(?:Contact|Primary)\s*(?:Phone|Mobile|Tel)[:\s]+([\+\d\s\(\)\-X]+)",
-        r"(?:Phone|Mobile|Tel)[:\s]+([\+\d\s\(\)\-X]+)",
+        r"(?:Contact|Primary)\s*(?:Phone|Mobile|Tel)[:\s]+([\+\d][\d\s\(\)\-X]{6,})",
+        r"(?:Phone|Mobile|Tel)[:\s]+([\+\d][\d\s\(\)\-X]{6,})",
         r"Email[:\s]+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})",
-        r"(\d{3}[-.\s]?\d{3}[-.\s]?\d{4})",
+        # 10-digit Indian mobile — must start with digit, no lone parens
+        r"\b(\d{10})\b",
     ],
     "asset_type": [
         r"(?:Asset|Vehicle|Property)\s*Type[:\s]+(.+?)(?:\n|$)",
@@ -198,12 +209,15 @@ TEXT_PATTERNS = {
         r"(?:Claim|Loss)\s+Type[:\s]+(.+?)(?:\n|$)",
         r"(?:Nature|Cause)\s+of\s+(?:Loss|Damage|Claim)[:\s]+(.+?)(?:\n|$)",
         r"LINE\s+OF\s+BUSINESS[:\s]+(.+?)(?:\n|$)",
-        r"(?:Collision|Damage|Theft|Fire)[:\s]*(.+?)(?:\n|$)",
+        r"Line\s+of\s+Business[:\s]+(.+?)(?:\n|$)",
+        # Avoid matching the ACORD/FormsBoss copyright watermark line
+        r"(?:Collision|Theft|Fire|Burglary|Flood)\s+(?:Claim|Damage)[:\s]*(.+?)(?:\n|$)",
     ],
     "attachments": [
-        r"^Attachments?\s+(.+?)(?:\n|$)",
+        # Only match explicit attachment lists — NOT REMARKS boilerplate
+        r"^Attachments?[:\s]+(.+?)(?:\n|$)",
         r"Documents?\s+(?:Submitted|Attached|Provided)[:\s]+(.+?)(?:\n|$)",
-        r"REMARKS[:\s]+(.+?)(?:\n|$)",
+        r"Attachments?:\s*(.+?)(?:\.|ROUTING|$)",
     ],
 }
 
@@ -213,11 +227,16 @@ MONEY_PATTERNS = {
         r"Damage\s+Estimate[:\s]+(.+)",
         r"ESTIMATE\s+AMOUNT[:\s]+\$?([\d,\.]+)",
         r"Loss\s+Amount[:\s]+(.+)",
+        # Text45 field (positional — already mapped via ACORD_FIELD_MAP but
+        # the value arrives as plain text in the kv dump: "Text45: 18000")
+        r"^Text45:\s*([\d,]+)\s*$",
+        r"Estimated\s+(?:Repair\s+)?Cost[:\s]+(.+)",
     ],
     "initial_estimate": [
-        r"Initial\s+Estimate[:\s]+(.+)",
+        r"Initial\s+[Ee]stimate[:\s]+(.+)",
         r"Workshop\s+Estimate[:\s]+(.+)",
         r"Approx(?:imate)?\.?\s+(?:INR|₹|\$)\s*([\d,]+)",
+        r"estimate:\s*(\d[\d,]+)",
     ],
 }
 
@@ -245,15 +264,29 @@ def find_in_remarks(form_fields: dict, pattern: str, group_fmt: str = "{1}") -> 
     return ""
 
 
+_JUNK_VALUES = re.compile(
+    r"FormsBoss|Impressive Publishing|ACORD 101.*Schedule|"
+    r"may be attached if more space",
+    re.I,
+)
+
+
 def match_field(text: str, patterns: list):
     """Find and return first match from list of patterns."""
     for pat in patterns:
         m = re.search(pat, text, re.I | re.M)
         if m:
-            val = clean(m.group(1))
+            # Handle two-group matches (e.g., date ranges: group1 to group2)
+            if m.lastindex and m.lastindex >= 2:
+                try:
+                    val = f"{m.group(1)} to {m.group(2)}"
+                except IndexError:
+                    val = clean(m.group(1))
+            else:
+                val = clean(m.group(1))
             val = re.split(r"\s*[\[\|]", val)[0].strip()
             val = re.sub(r"\s{2,}", " ", val)
-            if not is_empty(val):
+            if not is_empty(val) and not _JUNK_VALUES.search(val):
                 return val
     return None
 
