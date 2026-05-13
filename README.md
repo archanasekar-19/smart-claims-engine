@@ -1,91 +1,191 @@
-# Autonomous Insurance Claims Processing Agent
+# Smart Claims Engine — Autonomous Insurance Claims Processing Agent
 
-An intelligent FNOL (First Notice of Loss) document processing system that extracts key fields, detects missing or inconsistent data, and automatically routes claims to the correct workflow.
+An intelligent FNOL (First Notice of Loss) document processing system that extracts key fields from fillable ACORD PDFs and narrative text documents, detects missing or inconsistent data, and automatically routes claims to the correct workflow queue.
 
 ## Live Demo
 
-- Frontend: <a href="https://smart-claims-engine.netlify.app" target="_blank">smart-claims-engine.netlify.app</a>
-- Backend API: <a href="https://smart-claims-engine-2.onrender.com" target="_blank">smart-claims-engine-2.onrender.com</a>
+- **Frontend:** [smart-claims-engine.netlify.app](https://smart-claims-engine.netlify.app)
+- **Backend API:** [smart-claims-engine-2.onrender.com](https://smart-claims-engine-2.onrender.com)
 
 ---
 
-## Approach
+## Architecture Overview
 
-The system is built as a **FastAPI backend + React frontend** pipeline with five stages:
+The system is a **FastAPI backend + React (Vite) frontend** pipeline with five sequential stages:
 
-### 1. Document Parsing (`parser.py`)
+```
+Upload (PDF / TXT)
+        │
+        ▼
+  [parser.py]  ──────────── 3-tier field resolution ────────────
+        │                                                       │
+        ▼                                                       │
+ [extractor.py] ── form fields + TEXT_PATTERNS + fallbacks ────┘
+        │
+        ▼
+ [config.py]  ── missing-field detection + inconsistency checks
+        │
+        ▼
+ [router.py]  ── 4-rule priority routing engine
+        │
+        ▼
+  JSON response  ──→  React UI
+```
 
-Handles two document types with different strategies:
+---
 
-**Fillable PDFs (e.g. ACORD forms)**
-Uses **pypdf** to call `get_fields()` and read form field values directly from the PDF's AcroForm layer. This bypasses text extraction entirely — field values are read from the PDF data structure, not from rendered text. This eliminates misreads caused by form labels bleeding into extracted text.
+## Module Logic (Deep Dive)
 
-**Plain-text PDFs and TXT files**
-Falls back to **pdfplumber** text extraction when no fillable form fields are detected. This handles narrative FNOL documents, scanned text, and `.txt` uploads.
+### `backend/lib/parser.py` — Document Parsing & Field Resolution
 
-`parser.extract()` returns a dict:
+Handles two document types and resolves form fields using a **three-tier strategy**:
+
+#### Tier 0 — Named field IDs (ACORD standard labels)
+Named ACORD fields (e.g. `"PLATE NUMBER"`, `"VIN"`, `"DESCRIBE DAMAGE"`) are their own label. These are mapped directly via `_NAMED_FIELD_MAP` to internal keys with no spatial work required.
+
+#### Tier 1 — `/TU` tooltip metadata
+PDF form fields carry an optional `/TU` (tooltip) attribute set by the form author. When present, this is the authoritative human-readable label (e.g. `"POLICY NUMBER"`, `"DATE OF BIRTH"`). Resolved first before any spatial analysis.
+
+#### Tier 2 — Spatial proximity (same-row or directly above)
+Fields with no tooltip (unnamed fields like `Text7`, `Text8`, `Text45`) are resolved by finding the printed text on the page closest to the field's bounding box:
+- **Same-row:** words on the same horizontal line whose right edge is within 180px to the left of the field.
+- **Above:** words whose bottom edge is within 22px above the field top, horizontally within 200px of the field centre.
+
+This maps, for example, `Text8 → "LINE OF BUSINESS"` and `Text45 → "ESTIMATE AMOUNT"` automatically.
+
+#### Tier 3 — Header-band x-position + value shape
+The ACORD 2 form's top header band has tightly packed fields (date-of-loss, time, claim number) that share a single printed label. Spatial proximity is ambiguous here. Resolution uses the field's horizontal x-centre combined with value shape:
+- Value matches `dd/mm/yyyy` → `incident_date`
+- Value matches `HH:MM` → `incident_time`
+- Alphanumeric code at left/mid of band → `claim_number`
+
+**TXT fallback:** When no fillable form fields are found, the file is read as plain text and returned with an empty `form_fields` dict for regex-based extraction.
+
+`parser.extract()` returns:
 ```python
 {
-  "text":        str,   # raw text (used by router for keyword scan)
-  "form_fields": dict,  # field_id -> value (populated for fillable PDFs)
+  "text":        str,   # raw full text (used by router for keyword scan)
+  "form_fields": dict,  # internal_key → value (populated for fillable PDFs)
   "is_form":     bool,  # True when AcroForm fields were found and filled
 }
 ```
 
-### 2. Field Extraction (`extractor.py`)
+---
 
-Automatically selects extraction mode based on the parsed document type:
+### `backend/lib/config.py` — Field Mappings, Patterns & Utilities
 
-**Form mode (`extract_from_acord_form`)**
-Maps ACORD form field IDs directly to our standard field keys using a hardcoded lookup table (`_ACORD` dict). No regex. Example mappings:
-- `"DESCRIPTION OF ACCIDENT ACORD 101..."` → `description`
-- `"Text45"` → `estimate_raw` (Estimate Amount field)
-- `"Text7"` → `claim_type` (Line of Business field)
-- `"TYPE BODY"` → `asset_type`
-- `"PLATE NUMBER"` / `"VIN"` → `asset_id`
-- `"PHONE  CELL HOME BUS PRIMARY"` → `contact_details`
+Central configuration file. Defines all constants and helper functions used across the pipeline.
 
-**Text mode (`extract_from_text`)**
-Uses regex pattern matching against extracted text for narrative PDFs and TXT files. Extracts fields across five categories:
-- Policy Information (policy number, policyholder name, effective dates)
-- Incident Information (date, time, location, description)
-- Involved Parties (claimant, third parties, contact details)
-- Asset Details (asset type, asset ID, estimated damage)
-- Other Mandatory Fields (claim type, attachments, initial estimate)
+#### `MANDATORY_FIELDS`
+List of 15 fields that must be present for a claim to be considered complete:
+`policy_number`, `policyholder_name`, `effective_dates`, `incident_date`, `incident_time`, `location`, `description`, `claimant`, `contact_details`, `asset_type`, `asset_id`, `estimated_damage`, `claim_type`, `attachments`, `initial_estimate`.
 
-Monetary fields are parsed with `$`, `INR`, `₹`, and lakh-aware logic. Placeholder values like `[Not Provided]`, `N/A`, `TBD`, fully-redacted strings (`98XXX XXXXX`) are treated as missing.
+#### `ACORD_FIELD_MAP`
+Maps ACORD form label strings → internal snake_case keys. Only named/labelled fields (not positional `Text*` fields) are listed here. Used by `extractor.py` step 2a.
 
-Multi-line description fields are captured by walking forward line-by-line until a section header or known field label is encountered.
+#### `TEXT_PATTERNS` & `MONEY_PATTERNS`
+Regex pattern banks for each extractable field. Tried in order; first match wins. Covers:
+- Policy info (`policy_number`, `policyholder_name`, `effective_dates`)
+- Incident info (`incident_date`, `incident_time`, `location`)
+- Parties (`claimant`, `contact_details`)
+- Asset info (`asset_type`, `asset_id`)
+- Monetary values (`estimated_damage`, `initial_estimate`) with INR/lakh/`₹`/`$` parsing
 
-### 3. Inconsistency Detection (`extractor.py`)
+#### Key Utility Functions
 
-Flags issues such as:
-- Large gap between `estimated_damage` and `initial_estimate` (> ₹40,000)
-- Partially redacted contact details (detected via `XXX` pattern)
+| Function | Purpose |
+|----------|---------|
+| `is_empty(v)` | Returns `True` for `None`, blank strings, placeholder text (`[not provided]`, `N/A`, `TBD`, `--`), and fully-redacted strings (all X's) |
+| `clean(v)` | Strips leading/trailing whitespace |
+| `normalize(s)` | Uppercases and collapses internal whitespace to single spaces |
+| `parse_money(s)` | Extracts numeric amount from strings like `"₹18,000"`, `"INR 45000"`, `"2.5 lakh"` |
+| `match_field(text, patterns)` | Tries each regex in the list; returns first non-empty, non-junk match |
+| `match_money(text, patterns)` | Like `match_field` but coerces result to integer via `parse_money` |
+| `extract_multiline_description(text)` | Walks forward line-by-line from a description header, collecting lines until a section-stop pattern is encountered |
+| `find_missing_fields(extracted)` | Checks each mandatory field via `is_empty`; returns list of missing field names |
+| `find_inconsistencies(extracted)` | Checks: incident date after report date (high severity), claimant differs from policyholder by character-set similarity < 0.7 (medium), negative or >₹10M damage amount, missing contact details |
+| `similarity_score(s1, s2)` | Character-set Jaccard similarity (0–1) used by inconsistency checker |
 
-### 4. Routing (`router.py`)
+---
 
-Applies four routing rules in **strict priority order**. The description field value (not raw PDF text) is scanned for fraud keywords — this prevents false positives from boilerplate legal text present on pages 3–4 of ACORD forms.
+### `backend/lib/extractor.py` — Multi-Pass Field Extraction Engine
 
-| Priority | Condition | Route |
-|----------|-----------|-------|
-| 1 | Estimated damage > 0 and < ₹25,000 | Fast-track |
-| 2 | Any mandatory field is missing | Manual Review |
-| 3 | Description contains `fraud`, `inconsistent`, or `staged` | Investigation Flag |
-| 4 | Claim type (Line of Business) = `Injury` | Specialist Queue |
-| — | Otherwise | Standard Review |
+Orchestrates extraction in six sequential steps, each filling gaps left by the previous step.
 
-Routing reasoning is dynamically generated using extracted field values (claimant name, date, location, damage amount, missing field list, triggered keywords) to produce a detailed, context-specific explanation.
+**Step 1 — Parse the file**
+Calls `parser.extract()` to get `form_fields` and `text`.
 
-### 5. Frontend (`App.jsx`)
+**Step 2a — Map named ACORD field IDs**
+Iterates `ACORD_FIELD_MAP`; maps each ACORD label to its internal key. Skips empty/placeholder values.
 
-A **React + Vite** interface with:
-- File upload (drag & drop or Browse Files)
-- One-click sample FNOL PDF testing with colour-coded route badges and PDF download buttons
-- 2-second animated processing sequence (step indicators, dual-ring spinner)
-- Results display: routing decision, reasoning, missing fields, inconsistency warnings
-- Extracted fields grouped by category in a label-row layout
-- Full API response shown as formatted JSON
+**Step 2b — Merge spatially resolved internal keys**
+Fields already resolved by the parser's spatial tiers (e.g. `policy_number`, `estimated_damage`) are merged in directly without re-mapping.
+
+**Step 2c — Coerce monetary fields**
+Runs `parse_money()` on `estimated_damage` and `initial_estimate` to produce integers rather than raw strings.
+
+**Step 2d — Validate `incident_time`**
+Rejects times with impossible hour (>23) or minute (>59) values — catches parser misreads like `"38:20"`.
+
+**Step 2e — Composite location**
+If `location` is missing, builds it from `location_street + location_city`.
+
+**Step 2f — Promote `asset_id`**
+If `asset_id` is missing, promotes `plate_number` first, then `vin`.
+
+**Step 3 — TEXT_PATTERNS**
+For each field still missing after form extraction, runs `match_field()` against the full raw text using `TEXT_PATTERNS`. Includes a second `incident_time` validation pass to reject bad values introduced by regex.
+
+**Step 4 — MONEY_PATTERNS**
+Fills monetary fields still missing using `match_money()` against full text.
+
+**Step 5 — Multi-line description**
+If `description` is still missing, calls `extract_multiline_description()` to recover narrative text by walking forward past a description header until a section stop.
+
+**Step 6 — Fallback strategies (`_apply_fallbacks`)**
+Last-resort per-field fallbacks:
+- **`contact_details`:** Assembles from `contact_phone` + `contact_email` form fields (pipe-separated). Falls back to scanning text for phone/email patterns.
+- **`policy_number`:** Tries additional regex patterns, minimum 6-character requirement.
+- **`effective_dates`:** Scans for `"Policy Period: D/M/YYYY to D/M/YYYY"` in raw text.
+- **`incident_date`:** Explicit date-labeled patterns only (avoids matching addresses). Last resort: raw `Text1` form field if it matches `dd/mm/yyyy`.
+- **`incident_time`:** Broad time patterns, only if still missing.
+- **`claim_type`:** Additional patterns, then `Text8` form field directly, then infers from `asset_type` keyword matching (`"hatchback"` → `"Motor Vehicle Damage"`).
+- **`attachments`:** Scans REMARKS field for `"Attachments: ..."` sub-line or `"Photographs attached..."` pattern.
+
+---
+
+### `backend/lib/router.py` — Priority Routing Engine
+
+Applies **four rules in strict priority order**. The first rule to fire wins; lower-priority rules are never evaluated.
+
+| Priority | Condition | Route | Reasoning Generated |
+|----------|-----------|-------|---------------------|
+| 1 | `estimated_damage` > 0 and < ₹25,000 | **Fast-track** | Names claimant, date, location, confirms no flags |
+| 2 | Any field in `_ROUTING_MANDATORY` is missing | **Manual Review** | Lists each missing field by human-readable label |
+| 3 | `description` field (not raw text) contains `fraud`, `inconsistent`, `staged`, `planned`, `fake`, or `intentional` | **Investigation Flag** | Lists triggered keywords, names SIU escalation |
+| 4 | `claim_type` contains `injury`, `bodily injury`, `personal injury`, or `casualty` | **Specialist Queue** | Explains injury specialist requirements |
+| — | Otherwise (high damage, no flags) | **Manual Review** | States damage threshold exceeded or estimate absent |
+
+> **Why description-only for fraud scanning?** ACORD forms pages 3–4 contain state anti-fraud legal notices that include the word "fraudulent" — scanning raw text would flag every single claim as fraudulent.
+
+`_to_number(value)` handles lakh strings (`"2.5 lakh"` → `250000`), comma-formatted numbers, and raw int/float values uniformly.
+
+---
+
+### `backend/app.py` — FastAPI Application
+
+Single endpoint: `POST /process-claim`
+
+1. Saves the uploaded file to the `uploads/` directory
+2. Runs `extract_claim()` → `extracted_fields`
+3. Runs `find_missing_fields()` → `missing_fields`
+4. Runs `find_inconsistencies()` → `inconsistencies`
+5. Re-calls `extract()` to get raw text for router keyword scope
+6. Runs `route_claim()` → `(recommended_route, reasoning)`
+7. Deletes the uploaded file
+8. Returns JSON response
+
+Also exposes `GET /health` for deployment health checks.
 
 ---
 
@@ -93,11 +193,10 @@ A **React + Vite** interface with:
 
 | Layer | Technology |
 |-------|-----------|
-| Backend API | FastAPI |
-| ASGI Server | Uvicorn |
-| Fillable PDF parsing | pypdf (`get_fields()`) |
-| Narrative PDF parsing | pdfplumber |
-| Field Extraction | Direct field-ID mapping (form) / Python `re` (text) |
+| Backend API | FastAPI + Uvicorn |
+| Fillable PDF parsing | pypdf (AcroForm / `/Rect` annotations) |
+| Spatial label resolution | pdfplumber (word bounding boxes) |
+| Field Extraction | Direct field-ID mapping + `re` regex fallbacks |
 | File Uploads | python-multipart |
 | Frontend | React + Vite |
 | Styling | Inline CSS (no external UI library) |
@@ -107,18 +206,23 @@ A **React + Vite** interface with:
 ## Project Structure
 
 ```
-claims-agent/
-├── app.py               # FastAPI app, /process-claim endpoint
-├── parser.py            # PDF + TXT parsing (pypdf for forms, pdfplumber for text)
-├── extractor.py         # Field extraction, missing fields, inconsistencies
-├── router.py            # Claim routing logic (strict priority order)
-├── requirements.txt     # Python dependencies
-├── uploads/             # Temp storage for uploaded files
-└── frontend/
+smart-claims-engine/
+├── backend/
+│   ├── app.py                  # FastAPI app, /process-claim endpoint
+│   ├── requirements.txt
+│   ├── render.yaml             # Render deployment config
+│   ├── uploads/                # Temp storage (auto-cleaned after each request)
+│   └── lib/
+│       ├── config.py           # Field maps, regex patterns, utility functions
+│       ├── parser.py           # PDF/TXT parsing — 3-tier field resolution
+│       ├── extractor.py        # 6-step extraction pipeline + fallbacks
+│       └── router.py           # 4-rule priority routing engine
+└── frontend-ui/
     ├── src/
-    │   └── App.jsx      # React UI
+    │   └── App.jsx             # React UI — upload, processing animation, results
     ├── public/
-    │   └── samples/     # Sample FNOL PDFs served statically
+    │   └── samples/            # Sample FNOL PDFs served statically
+    ├── index.html
     └── package.json
 ```
 
@@ -129,9 +233,6 @@ claims-agent/
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+
-- pip
-
----
 
 ### 1. Clone the repository
 
@@ -140,11 +241,10 @@ git clone https://github.com/archanasekar-19/smart-claims-engine.git
 cd smart-claims-engine
 ```
 
----
-
 ### 2. Install Python dependencies
 
 ```bash
+cd backend
 pip install -r requirements.txt
 ```
 
@@ -158,97 +258,68 @@ python-multipart
 pydantic
 ```
 
----
-
 ### 3. Start the FastAPI backend
 
 ```bash
 uvicorn app:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`.
+API available at `http://localhost:8000`  
+Swagger docs: `http://localhost:8000/docs`
 
-Auto-generated docs: `http://localhost:8000/docs`
-
----
-
-### 4. Install frontend dependencies
+### 4. Install and start the frontend
 
 ```bash
-cd frontend
+cd frontend-ui
 npm install
 ```
 
----
-
-### 5. Configure the API URL
-
-Create a `.env` file inside the `frontend/` folder:
-
+Create `.env` inside `frontend-ui/`:
 ```env
 VITE_API_URL=http://localhost:8000
 ```
-
----
-
-### 6. Add sample FNOL PDFs
-
-Copy the four generated sample PDFs into `frontend/public/samples/`:
-
-```
-frontend/public/samples/
-├── ROUTE1_FastTrack.pdf
-├── ROUTE2_ManualReview.pdf
-├── ROUTE3_InvestigationFlag.pdf
-└── ROUTE4_SpecialistQueue.pdf
-```
-
----
-
-### 7. Start the frontend
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+Frontend available at `http://localhost:5173`
 
----
-
-### 8. Test the API directly (optional)
+### 5. Test the API directly (optional)
 
 ```bash
 curl -X POST http://localhost:8000/process-claim \
-  -F "file=@ROUTE1_FastTrack.pdf"
+  -F "file=@backend/uploads/FNOL_T1_FastTrack.pdf"
 ```
 
 ---
 
 ## Sample FNOL Documents
 
-Four ACORD Automobile Loss Notice PDFs (ACORD 2, 2016/10), each filled to trigger exactly one routing outcome:
+Four ACORD Automobile Loss Notice PDFs (ACORD 2), each engineered to trigger exactly one routing outcome:
 
 | File | Claimant | Expected Route | Trigger |
 |------|----------|----------------|---------|
-| `ROUTE1_FastTrack.pdf` | Aditya Ramesh Kumar | Fast-track | Damage = ₹18,000 (< ₹25,000), all fields present, no fraud words |
-| `ROUTE2_ManualReview.pdf` | Meena Subramaniam | Manual Review | Missing: incident time, contact details, asset type, effective dates, initial estimate |
-| `ROUTE3_InvestigationFlag.pdf` | Vikram Anand Shetty | Investigation Flag | Description contains *staged*, *inconsistent*, *fraud*; all fields present, damage > ₹25,000 |
-| `ROUTE4_SpecialistQueue.pdf` | Preethi Lakshmi Narayan | Specialist Queue | Line of Business = `Injury`; all fields present, no fraud words, damage > ₹25,000 |
-
-Each PDF is engineered so only its intended priority rule fires and all higher-priority rules are explicitly blocked.
+| `ROUTE1_FastTrack.pdf` | Aditya Ramesh Kumar | **Fast-track** | Damage = ₹18,000 (< ₹25,000 threshold), all fields present, no fraud words |
+| `ROUTE2_ManualReview.pdf` | Meena Subramaniam | **Manual Review** | Missing: incident time, contact details, asset type, effective dates, initial estimate |
+| `ROUTE3_InvestigationFlag.pdf` | Vikram Anand Shetty | **Investigation Flag** | Description contains *staged*, *inconsistent*, *fraud*; all fields present, damage > ₹25,000 |
+| `ROUTE4_SpecialistQueue.pdf` | Preethi Lakshmi Narayan | **Specialist Queue** | Line of Business = `Injury`; all fields present, no fraud words, damage > ₹25,000 |
 
 ---
 
 ## API Response Format
 
+`POST /process-claim` → JSON:
+
 ```json
 {
   "extractedFields": {
     "policyholder_name": "Aditya Ramesh Kumar",
+    "policy_number": "SAFE-2024-AUTO-10045",
     "incident_date": "05/10/2026",
     "incident_time": "10:30 AM",
-    "location": "Velachery Main Road, Near SRM Flyover, Chennai, Tamil Nadu 600042, India",
-    "description": "Insured vehicle was stationary at a red light when a two-wheeler collided with the rear bumper at low speed. Minor paint scrape and a small dent on the rear bumper. No injuries sustained.",
+    "location": "Velachery Main Road, Near SRM Flyover, Chennai, TN 600042",
+    "description": "Insured vehicle was stationary at a red light when a two-wheeler collided with the rear bumper at low speed. Minor paint scrape and a small dent.",
     "claimant": "Aditya Ramesh Kumar",
     "contact_details": "9840012345",
     "asset_type": "Hatchback",
@@ -258,14 +329,33 @@ Each PDF is engineered so only its intended priority rule fires and all higher-p
     "attachments": "See damage description",
     "vehicle_make": "Maruti Suzuki",
     "vehicle_year": "2023",
-    "carrier": "SafeGuard General Insurance",
-    "date_filed": "05/10/2026"
+    "carrier": "SafeGuard General Insurance"
   },
-  "missingFields": ["policy_number", "effective_dates", "initial_estimate"],
+  "missingFields": ["effective_dates", "initial_estimate"],
   "inconsistencies": [],
   "recommendedRoute": "Fast-track",
-  "reasoning": "Estimated damage of ₹18,000 is below the ₹25,000 fast-track threshold. The claim filed by Aditya Ramesh Kumar on 05/10/2026 at Velachery Main Road, Near SRM Flyover, Chennai, Tamil Nadu 600042, India has all mandatory fields present, contains no fraud indicators, and does not involve personal injury. This claim qualifies for accelerated straight-through processing with no manual intervention required."
+  "reasoning": "Estimated damage of ₹18,000 is below the ₹25,000 fast-track threshold. The claim filed by Aditya Ramesh Kumar on 05/10/2026 at Velachery Main Road has all mandatory fields present, contains no fraud indicators, and does not involve personal injury. This claim qualifies for accelerated straight-through processing with no manual intervention required."
 }
+```
+
+---
+
+## Routing Logic Summary
+
+```
+Damage < ₹25,000?
+  └─ YES → Fast-track
+     NO ↓
+Any mandatory field missing?
+  └─ YES → Manual Review
+     NO ↓
+"fraud" / "staged" / "inconsistent" in description?
+  └─ YES → Investigation Flag
+     NO ↓
+Claim type contains "injury"?
+  └─ YES → Specialist Queue
+     NO ↓
+           → Manual Review (high damage / no estimate)
 ```
 
 ---
@@ -286,7 +376,7 @@ Each PDF is engineered so only its intended priority rule fires and all higher-p
 
 | Field | Value |
 |-------|-------|
-| Base Directory | `frontend` |
+| Base Directory | `frontend-ui` |
 | Build Command | `npm run build` |
 | Publish Directory | `dist` |
 | Environment Variable | `VITE_API_URL=https://smart-claims-engine-2.onrender.com` |

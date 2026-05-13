@@ -141,6 +141,7 @@ export default function App() {
         flexDirection: 'column',
         alignItems: 'center',
         boxShadow: '0 25px 60px rgba(37,99,235,0.25)',
+        fontFamily: 'Poppins, sans-serif'
       }}>
         <div style={{ position: 'absolute', left: -70, bottom: -70, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', textAlign: 'center' }} />
         <div style={{ position: 'relative', zIndex: 1 }}>
